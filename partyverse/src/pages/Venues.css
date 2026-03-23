@@ -1,0 +1,136 @@
+.venues-root {
+  min-height: 100vh;
+  width: 100vw;
+  background: #15091c;
+  color: #fff;
+  font-family: 'Inter', Arial, sans-serif;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.venues-header {
+  text-align: center;
+  margin: 42px 0 20px 0;
+}
+.venues-title {
+  font-size: 58px;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+.venues-title-highlight {
+  color: #e859cf;
+  font-size: 58px;
+  font-weight: 700;
+}
+.venues-tagline {
+  color: #bb9bcb;
+  font-size: 22px;
+  margin: 16px 0 25px 0;
+}
+.venues-cards-section {
+  display: flex;
+  gap: 35px;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: wrap;
+  padding: 16px 0 60px 0;
+  width: 100vw;
+}
+.venue-card {
+  background: linear-gradient(115deg, rgba(23,10,42,0.97) 80%, rgba(104,58,144,0.12) 100%);
+  border-radius: 22px;
+  padding: 36px 34px 24px 34px;
+  min-width: 355px;
+  max-width: 410px;
+  min-height: 310px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  box-shadow: 0 2px 22px 0 rgba(80,25,84,0.12);
+  margin-bottom: 18px;
+  border: 2px solid rgba(117,67,190,0.11);
+  position: relative;
+}
+.venue-icon {
+  font-size: 54px;
+  margin-bottom: 16px;
+}
+.venue-card-title {
+  font-size: 27px;
+  font-weight: 600;
+  margin-bottom: 7px;
+  color: #fff;
+}
+.venue-card-desc {
+  color: #b993cc;
+  font-size: 17px;
+  margin-bottom: 18px;
+}
+.venue-card-meta {
+  font-size: 16px;
+  color: #efcfff;
+  margin-bottom: 10px;
+}
+.venue-meta-label {
+  font-weight: bold;
+  color: #fff;
+  margin-right: 4px;
+}
+.venue-feature-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px;
+  margin-left: 11px;
+  margin-top: 6px;
+}
+.venue-feature-tag {
+  background: #251641;
+  color: #be7dff;
+  padding: 5px 17px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.venue-card-actions {
+  display: flex;
+  gap: 22px;
+  justify-content: flex-start;
+  margin-top: 27px;
+  width: 100%;
+}
+.venue-preview-btn {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #8e55ff;
+  border-radius: 13px;
+  padding: 14px 36px;
+  font-weight: 700;
+  font-size: 19px;
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s;
+}
+.venue-preview-btn:hover {
+  background: #6d47fb25;
+  color: #e859cf;
+}
+.venue-book-btn {
+  background: linear-gradient(90deg, #b579fa, #eb42b6 80%);
+  border: none;
+  color: #fff;
+  border-radius: 13px;
+  padding: 14px 36px;
+  font-weight: 700;
+  font-size: 19px;
+  box-shadow: 0 4px 16px 0 #7b08895c;
+  cursor: pointer;
+  transition: box-shadow 0.13s;
+}
+@media (max-width: 1200px) {
+  .venues-cards-section {
+    flex-direction: column;
+    align-items: center;
+  }
+  .venue-card { width: 98vw; min-width: unset; max-width: 99vw; }
+  .venues-title, .venues-title-highlight { font-size: 34px; }
+}

@@ -1,0 +1,35 @@
+/* Reuse shared auth styles from Auth.css, then add: */
+
+.auth-role-toggle {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 7px;
+}
+.role-btn {
+  flex: 1;
+  padding: 15px 0;
+  background: #210a32;
+  color: #dbcaf7;
+  font-weight: 700;
+  font-size: 1.10rem;
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.14s;
+  box-shadow: 0 1px 4px 0 #8f3d8a17;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.role-btn.active {
+  background: linear-gradient(90deg, #b579fa, #eb42b6 81%);
+  color: #fff;
+  box-shadow: 0 2px 22px 0 #70009979;
+}
+.auth-main-btn.highlight-btn {
+  background: linear-gradient(90deg, #bb78fa, #eb42b6 98%);
+  color: #fff;
+  font-weight: bold;
+}

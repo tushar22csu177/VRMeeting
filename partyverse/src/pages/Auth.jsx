@@ -21,7 +21,7 @@ export default function Auth() {
     // Only sign-in here (you already have a separate SignUp page)
     await loginUser({ email, password });
     alert("Signed in successfully");
-    navigate("/");
+    navigate("/partyverse");
   } catch (err) {
     console.error(err);
     const msg =
@@ -34,7 +34,7 @@ export default function Auth() {
   return (
     <div className="auth-root">
       <div className="auth-back">
-        <Link to="/" className="back-link">← Back to Home</Link>
+        <Link to="/partyverse" className="back-link">← Back to Home</Link>
       </div>
       <main className="auth-shell">
         <div className="auth-logo-box">

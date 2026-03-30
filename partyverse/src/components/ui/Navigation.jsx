@@ -10,7 +10,7 @@ export default function Navigation() {
         <span className="landing-navbar-title">PartyVerse</span>
       </div>
       <div className="landing-navbar-links">
-        <Link to="/" className={pathname === "/" ? "active-link" : ""}>Home</Link>
+        <Link to="/" className={pathname === "/partyverse" ? "active-link" : ""}>Home</Link>
         <Link to="/events" className={pathname === "/events" ? "active-link" : ""}>Events</Link>
         <Link to="/venues" className={pathname === "/venues" ? "active-link" : ""}>Venues</Link>
       </div>

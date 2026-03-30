@@ -5,7 +5,9 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
-const meetingRoutes = require("./routes/meetingRoutes");
+
+const http = require("http"); // 🔥 NEW
+const setupSocket = require("./socket"); // 🔥 NEW
 
 dotenv.config();
 
@@ -18,13 +20,12 @@ connectDB();
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
-app.use("/api/meetings", meetingRoutes);
 
-// CORS (match your Vite dev URL)
+// CORS (IMPORTANT: keep above routes ideally)
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true
+    credentials: true,
   })
 );
 
@@ -32,18 +33,40 @@ app.use(
 const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const venueRoutes = require("./routes/venueRoutes");
+const meetingRoutes = require("./routes/meetingRoutes");
+
+// 🔥 NEW
+const roomRoutes = require("./routes/roomRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/venues", venueRoutes);
+app.use("/api/meetings", meetingRoutes);
+
+// 🔥 NEW ROOMS API
+app.use("/api/rooms", roomRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Start server
+/* ===========================
+   SOCKET SERVER SETUP
+=========================== */
+
+// 🔥 CREATE HTTP SERVER
+const server = http.createServer(app);
+
+// 🔥 ATTACH SOCKET.IO
+setupSocket(server);
+
+/* ===========================
+   START SERVER
+=========================== */
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+
+server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });

@@ -48,7 +48,7 @@ export default function Events() {
           <span className="events-navbar-title">PartyVerse</span>
         </div>
         <div className="events-navbar-links">
-          <a href="/">Home</a>
+          <a href="/partyverse">Home</a>
           <a href="/events" className="active-link">
             Events
           </a>

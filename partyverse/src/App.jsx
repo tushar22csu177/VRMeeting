@@ -10,6 +10,16 @@ import Auth from "./pages/Auth";
 import SignUp from "./pages/SignUp";
 import EventDetails from "./pages/EventDetails";
 import EventDashboard from "./pages/EventDashboard";
+import PlatformSelector from "./pages/PlatformSelector";
+import FormalDashboard from "./components/formal/FormalDashboard";
+import ScheduleMeeting from "./components/formal/ScheduleMeeting";
+import UpcomingMeetings from "./components/formal/UpcomingMeetings";
+import MeetingCalendar from "./components/formal/MeetingCalendar";
+import CreateMeeting from "./components/formal/CreateMeeting";
+import FormalAnalytics from "./components/formal/FormalAnalytics";
+import HomeMeet from "./components/formal/HomeMeet";
+import PreJoin from "./components/formal/PreJoin";
+import MeetingRoom from "./components/formal/MeetingRoom";
 
 function NotFound() {
   return (
@@ -31,7 +41,8 @@ export default function App() {
     <Router>
       <Routes>
         {/* Landing / Home */}
-        <Route path="/" element={<Landing />} />
+       <Route path="/" element={<PlatformSelector />} />
+       <Route path="/partyverse" element={<Landing />} />
 
         {/* Events list + details */}
         <Route path="/events" element={<Events />} />
@@ -52,6 +63,25 @@ export default function App() {
 
         {/* Fallback */}
         <Route path="*" element={<NotFound />} />
+        
+        <Route path="/formal/schedule" element={<ScheduleMeeting />} />
+
+<Route path="/formal/upcoming" element={<UpcomingMeetings />} />
+        
+        <Route path="/formal/calendar" element={<MeetingCalendar />} />
+        {/* FormalVerse */}
+        <Route path="/formal/dashboard1" element={<FormalDashboard/>} />
+
+        <Route path="/formal/create-meeting" element={<CreateMeeting />} />
+
+        <Route path="/formal/analytics" element={<FormalAnalytics />} />
+
+        <Route path="/formal/dashboard" element={<HomeMeet />} />
+
+        <Route path="/formal/prejoin/:id" element={<PreJoin />} />
+        <Route path="/formal/room/:id" element={<MeetingRoom />} />
+
+
       </Routes>
     </Router>
   );

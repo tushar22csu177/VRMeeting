@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const meetingRoutes = require("./routes/meetingRoutes");
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ connectDB();
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
+app.use("/api/meetings", meetingRoutes);
 
 // CORS (match your Vite dev URL)
 app.use(

@@ -1,0 +1,76 @@
+/* FORCE FULL SCREEN MODE */
+.selector-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+/* SPLIT PANELS */
+.selector-half {
+  width: 50%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+  transition: width 0.7s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* HOVER LOGIC */
+.selector-root:hover .selector-half {
+  width: 40%;
+}
+
+.selector-half.active {
+  width: 60% !important;
+}
+
+/* DARK OVERLAY */
+.overlay-dark {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+
+/* CONTENT */
+.content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  max-width: 500px;
+}
+
+.content h1 {
+  font-size: 4rem;
+  margin-bottom: 15px;
+}
+
+.content p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-bottom: 25px;
+}
+
+.content button {
+  background: white;
+  color: black;
+  padding: 14px 30px;
+  border-radius: 30px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.content button:hover {
+  transform: scale(1.08);
+}

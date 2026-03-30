@@ -1,0 +1,262 @@
+/* ROOT */
+.formal-root {
+  display: flex;
+  height: 100vh;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  font-family: "Inter", sans-serif;
+}
+
+/* SIDEBAR */
+.formal-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #0f172a, #020617);
+  color: white;
+  padding: 30px 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 30px rgba(0,0,0,0.15);
+}
+
+.formal-sidebar h2 {
+  font-size: 22px;
+  margin-bottom: 50px;
+  letter-spacing: 1px;
+}
+
+.formal-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formal-sidebar a {
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+}
+
+.formal-sidebar a:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.08);
+  transform: translateX(6px);
+}
+
+/* MAIN */
+.formal-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* NAVBAR */
+.formal-navbar {
+  height: 75px;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.formal-navbar input {
+  width: 320px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #f1f5f9;
+  outline: none;
+  transition: 0.3s;
+}
+
+.formal-navbar input:focus {
+  background: white;
+  box-shadow: 0 0 0 2px #6366f1;
+}
+
+.formal-user {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+}
+
+/* CONTENT */
+.formal-content {
+  padding: 35px;
+  overflow-y: auto;
+}
+
+/* CARDS */
+.formal-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  margin-bottom: 28px;
+}
+
+.card {
+  background: white;
+  padding: 26px;
+  border-radius: 18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+  font-size: 15px;
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+
+.card p {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* SECTIONS */
+.formal-sections {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 22px;
+}
+
+.calendar, .upcoming {
+  background: white;
+  padding: 26px;
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.05);
+  height: 420px;
+  transition: 0.3s;
+}
+
+.calendar:hover, .upcoming:hover {
+  transform: translateY(-4px);
+}
+
+/* SCROLLBAR */
+.formal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.formal-content::-webkit-scrollbar-thumb {
+  background: #c7d2fe;
+  border-radius: 10px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .formal-cards {
+    grid-template-columns: repeat(2,1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .formal-sidebar {
+    display: none;
+  }
+
+  .formal-sections {
+    grid-template-columns: 1fr;
+  }
+}
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  font-size: 14px;
+}
+
+.sidebar-link:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.08);
+  transform: translateX(6px);
+}
+
+.sidebar-link.active {
+  opacity: 1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 10px 20px rgba(99,102,241,0.4);
+}
+.navbar-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f1f5f9;
+  padding: 10px 14px;
+  border-radius: 12px;
+  width: 420px;
+}
+
+.navbar-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.join-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.join-btn:hover {
+  transform: scale(1.05);
+}
+
+.nav-icon {
+  position: relative;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: 0.2s;
+}
+
+.nav-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.notif-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  background: red;
+  border-radius: 50%;
+}

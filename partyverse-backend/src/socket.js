@@ -8,12 +8,13 @@ function setupSocket(server) {
     },
   });
 
-  const rooms = {}; // { roomId: { seatName: userId } }
+  const rooms = {};
 
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("joinRoom", ({ roomId, userId }) => {
+    /* JOIN ROOM */
+    socket.on("joinRoom", ({ roomId }) => {
       socket.join(roomId);
 
       if (!rooms[roomId]) rooms[roomId] = {};
@@ -21,16 +22,37 @@ function setupSocket(server) {
       socket.emit("seatState", rooms[roomId]);
     });
 
-    socket.on("takeSeat", ({ roomId, seatName, userId }) => {
+    /* TAKE SEAT (FIXED) */
+    socket.on("takeSeat", ({ roomId, seatName, userId, name, position, avatarType }) => {
       if (!rooms[roomId]) rooms[roomId] = {};
 
       if (rooms[roomId][seatName]) return;
 
-      rooms[roomId][seatName] = userId;
+      rooms[roomId][seatName] = {
+        userId,
+        name,
+        position,
+        rotation: [0, 0, 0],
+        avatarType,
+      };
 
       io.to(roomId).emit("seatUpdate", rooms[roomId]);
     });
 
+    /* HEAD MOVE */
+    socket.on("headMove", ({ roomId, rotation }) => {
+      if (!rooms[roomId]) return;
+
+      for (let seat in rooms[roomId]) {
+        if (rooms[roomId][seat].userId === socket.id) {
+          rooms[roomId][seat].rotation = rotation;
+        }
+      }
+
+      io.to(roomId).emit("seatUpdate", rooms[roomId]);
+    });
+
+    /* LEAVE */
     socket.on("leaveSeat", ({ roomId, seatName }) => {
       if (!rooms[roomId]) return;
 
@@ -39,8 +61,19 @@ function setupSocket(server) {
       io.to(roomId).emit("seatUpdate", rooms[roomId]);
     });
 
+    /* DISCONNECT */
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
+
+      for (let roomId in rooms) {
+        for (let seat in rooms[roomId]) {
+          if (rooms[roomId][seat].userId === socket.id) {
+            delete rooms[roomId][seat];
+          }
+        }
+
+        io.to(roomId).emit("seatUpdate", rooms[roomId]);
+      }
     });
   });
 }

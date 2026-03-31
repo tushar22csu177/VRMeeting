@@ -1,10 +1,9 @@
 // src/pages/Room3D.jsx
 
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Html, useProgress, useGLTF } from "@react-three/drei";
+import { Html, useProgress, useGLTF, useAnimations } from "@react-three/drei";
 import socket from "../lib/socket";
-import Avatar from "../components/Avatar";
 import { useParams } from "react-router-dom";
 import * as THREE from "three";
 
@@ -20,18 +19,56 @@ function Loader() {
   );
 }
 
+/* ================= AVATAR WITH ANIMATION ================= */
+function MyAvatar({ position, rotation, gender }) {
+  const group = useRef();
+
+  const { scene, animations } = useGLTF(
+    gender === "female" ? "/models/female.glb" : "/models/male.glb"
+  );
+
+  const { actions } = useAnimations(animations, group);
+
+  /* ▶️ PLAY SITTING ANIMATION */
+  useEffect(() => {
+    if (!actions) return;
+
+    const names = Object.keys(actions);
+
+    if (names.length > 0) {
+      actions[names[0]].reset().fadeIn(0.3).play();
+    }
+  }, [actions]);
+
+  return (
+    <group ref={group} position={position} rotation={rotation}>
+      <primitive object={scene.clone()} scale={1} />
+    </group>
+  );
+}
+
 /* ================= MODEL ================= */
-function Model({ registerSeats, onSeatClick }) {
+function Model({ setSeats, setAnchors, onSeatClick }) {
   const { scene } = useGLTF("/models/Jazz_Club.glb");
 
   useEffect(() => {
     const seats = {};
+    const anchors = {};
+
     scene.traverse((child) => {
-      if (child.isMesh && child.name.toLowerCase().includes("chair")) {
+      const name = child.name.toLowerCase();
+
+      if (child.isMesh && name.includes("chair")) {
         seats[child.name] = child;
       }
+
+      if (name.includes("anchor")) {
+        anchors[child.name] = child;
+      }
     });
-    registerSeats(seats);
+
+    setSeats(seats);
+    setAnchors(anchors);
   }, [scene]);
 
   return (
@@ -47,15 +84,12 @@ function Model({ registerSeats, onSeatClick }) {
   );
 }
 
-/* ================= FPS CONTROLS ================= */
+/* ================= FPS ================= */
 function FPSControls({ enabled }) {
   const { camera } = useThree();
-
   const keys = useRef({});
   const yaw = useRef(0);
-  const pitch = useRef(0);
 
-  /* KEYBOARD */
   useEffect(() => {
     const down = (e) => (keys.current[e.key.toLowerCase()] = true);
     const up = (e) => (keys.current[e.key.toLowerCase()] = false);
@@ -69,34 +103,6 @@ function FPSControls({ enabled }) {
     };
   }, []);
 
-  /* POINTER LOCK */
-  useEffect(() => {
-    const click = () => {
-      if (enabled) {
-        document.body.requestPointerLock();
-      }
-    };
-
-    window.addEventListener("click", click);
-    return () => window.removeEventListener("click", click);
-  }, [enabled]);
-
-  /* MOUSE LOOK */
-  useEffect(() => {
-    const move = (e) => {
-      if (!enabled) return;
-
-      yaw.current -= e.movementX * 0.002;
-      pitch.current -= e.movementY * 0.002;
-
-      pitch.current = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch.current));
-    };
-
-    document.addEventListener("mousemove", move);
-    return () => document.removeEventListener("mousemove", move);
-  }, [enabled]);
-
-  /* MOVEMENT */
   useFrame(() => {
     if (!enabled) return;
 
@@ -118,99 +124,31 @@ function FPSControls({ enabled }) {
     if (keys.current["s"]) camera.position.addScaledVector(forward, speed);
     if (keys.current["a"]) camera.position.addScaledVector(right, -speed);
     if (keys.current["d"]) camera.position.addScaledVector(right, speed);
-
-    camera.rotation.set(pitch.current, yaw.current, 0);
   });
 
   return null;
 }
 
-/* ================= CAMERA SYSTEM ================= */
-function CameraSystem({ seatObj, thirdPerson }) {
+/* ================= CAMERA ================= */
+function CameraSystem({ anchor, firstPerson }) {
   const { camera } = useThree();
 
-  const yaw = useRef(0);
-  const pitch = useRef(0);
-
-  useEffect(() => {
-    const move = (e) => {
-      if (!seatObj) return;
-
-      yaw.current -= e.movementX * 0.002;
-      pitch.current -= e.movementY * 0.002;
-
-      pitch.current = Math.max(-0.5, Math.min(0.5, pitch.current));
-    };
-
-    document.addEventListener("mousemove", move);
-    return () => document.removeEventListener("mousemove", move);
-  }, [seatObj]);
-
   useFrame(() => {
-    if (!seatObj) return;
+    if (!anchor) return;
 
     const pos = new THREE.Vector3();
-    seatObj.getWorldPosition(pos);
+    anchor.getWorldPosition(pos);
 
-    const dir = new THREE.Vector3(
-      Math.sin(yaw.current),
-      0,
-      Math.cos(yaw.current)
-    );
-
-    let camPos;
-
-    if (thirdPerson) {
-      camPos = pos.clone()
-        .add(new THREE.Vector3(0, 1.6, 0))
-        .add(dir.clone().multiplyScalar(-2.5));
+    if (firstPerson) {
+      camera.position.lerp(pos.clone().add(new THREE.Vector3(0, 1.2, 0)), 0.2);
     } else {
-      camPos = pos.clone()
-        .add(new THREE.Vector3(0, 1.2, 0))
-        .add(dir.clone().multiplyScalar(0.3));
+      camera.position.lerp(pos.clone().add(new THREE.Vector3(0, 2, 3)), 0.2);
     }
 
-    camera.position.lerp(camPos, 0.15);
-
-    const lookTarget = pos.clone().add(new THREE.Vector3(0, 1.2, 0)).add(dir);
-    camera.lookAt(lookTarget);
+    camera.lookAt(pos.clone().add(new THREE.Vector3(0, 1.2, 0)));
   });
 
   return null;
-}
-
-/* ================= SEAT SNAP ================= */
-function getSeatAnchor(obj) {
-  const raycaster = new THREE.Raycaster();
-
-  const center = new THREE.Vector3();
-  obj.getWorldPosition(center);
-
-  const origin = center.clone().add(new THREE.Vector3(0, 2, 0));
-  raycaster.set(origin, new THREE.Vector3(0, -1, 0));
-
-  const intersects = raycaster.intersectObject(obj, true);
-
-  let y = center.y;
-
-  if (intersects.length > 0) {
-    let best = intersects[0];
-    for (let i = 1; i < intersects.length; i++) {
-      if (intersects[i].point.y > best.point.y) best = intersects[i];
-    }
-    y = best.point.y + 0.03;
-  }
-
-  const quat = obj.getWorldQuaternion(new THREE.Quaternion());
-  const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(quat);
-  const offset = forward.multiplyScalar(-0.25);
-
-  const rotY = new THREE.Euler().setFromQuaternion(quat).y;
-
-  return {
-    position: [center.x + offset.x, y, center.z + offset.z],
-    rotation: [0, rotY, 0],
-  };
 }
 
 /* ================= MAIN ================= */
@@ -219,11 +157,14 @@ export default function Room3D() {
 
   const [seatMap, setSeatMap] = useState({});
   const [seatObjects, setSeatObjects] = useState({});
+  const [anchors, setAnchors] = useState({});
   const [mySeat, setMySeat] = useState(null);
-  const [thirdPerson, setThirdPerson] = useState(true);
+  const [firstPerson, setFirstPerson] = useState(true);
 
   const userId = localStorage.getItem("userId");
+  const gender = localStorage.getItem("gender") || "female";
 
+  /* SOCKET */
   useEffect(() => {
     socket.emit("joinRoom", { roomId, userId });
 
@@ -236,25 +177,43 @@ export default function Room3D() {
     };
   }, []);
 
+  /* CAMERA SWITCH */
   useEffect(() => {
-    const found = Object.entries(seatMap).find(([_, uid]) => uid === userId);
-    if (found) setMySeat(found[0]);
-  }, [seatMap]);
-
-  useEffect(() => {
-    const toggle = (e) => {
-      if (e.key.toLowerCase() === "v") {
-        setThirdPerson((p) => !p);
-      }
+    const key = (e) => {
+      if (e.key === "f") setFirstPerson(true);
+      if (e.key === "v") setFirstPerson(false);
     };
-    window.addEventListener("keydown", toggle);
-    return () => window.removeEventListener("keydown", toggle);
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
   }, []);
 
   const handleSeatClick = (seatName) => {
     if (seatMap[seatName]) return;
+
     socket.emit("takeSeat", { roomId, seatName, userId });
     setMySeat(seatName);
+  };
+
+  /* FIND CLOSEST ANCHOR */
+  const getAnchor = (seatObj) => {
+    let closest = null;
+    let minDist = Infinity;
+
+    const seatPos = new THREE.Vector3();
+    seatObj.getWorldPosition(seatPos);
+
+    Object.values(anchors).forEach((a) => {
+      const p = new THREE.Vector3();
+      a.getWorldPosition(p);
+
+      const d = p.distanceTo(seatPos);
+      if (d < minDist) {
+        minDist = d;
+        closest = a;
+      }
+    });
+
+    return closest;
   };
 
   return (
@@ -263,35 +222,42 @@ export default function Room3D() {
       <directionalLight position={[5, 5, 5]} />
 
       <Suspense fallback={<Loader />}>
-        <Model registerSeats={setSeatObjects} onSeatClick={handleSeatClick} />
+        <Model
+          setSeats={setSeatObjects}
+          setAnchors={setAnchors}
+          onSeatClick={handleSeatClick}
+        />
 
-        {/* WALK MODE */}
         <FPSControls enabled={!mySeat} />
 
-        {/* SIT MODE CAMERA */}
         {mySeat && (
           <CameraSystem
-            seatObj={seatObjects[mySeat]}
-            thirdPerson={thirdPerson}
+            anchor={getAnchor(seatObjects[mySeat])}
+            firstPerson={firstPerson}
           />
         )}
 
         {/* AVATARS */}
         {Object.entries(seatMap).map(([seatName, uid]) => {
-          const obj = seatObjects[seatName];
-          if (!obj) return null;
+          const seatObj = seatObjects[seatName];
+          if (!seatObj) return null;
 
-          const anchor = getSeatAnchor(obj);
+          const anchor = getAnchor(seatObj);
+          if (!anchor) return null;
 
-          if (uid === userId && !mySeat) return null;
+          const pos = new THREE.Vector3();
+          anchor.getWorldPosition(pos);
+
+          const rot = new THREE.Euler().setFromQuaternion(
+            anchor.getWorldQuaternion(new THREE.Quaternion())
+          );
 
           return (
-            <Avatar
+            <MyAvatar
               key={seatName + "-" + uid}
-              position={anchor.position}
-              rotation={anchor.rotation}
-              avatarType="female"
-              isMe={uid === userId}
+              position={[pos.x, pos.y, pos.z]}
+              rotation={[0, rot.y, 0]}
+              gender={gender}
             />
           );
         })}

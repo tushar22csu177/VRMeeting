@@ -26,17 +26,11 @@ function Model({ registerSeats, onSeatClick }) {
 
   useEffect(() => {
     const seats = {};
-
     scene.traverse((child) => {
-      if (
-        child.isMesh &&
-        (child.name.toLowerCase().includes("chair") ||
-          child.name.toLowerCase().includes("seat"))
-      ) {
+      if (child.isMesh && child.name.toLowerCase().includes("chair")) {
         seats[child.name] = child;
       }
     });
-
     registerSeats(seats);
   }, [scene]);
 
@@ -45,7 +39,6 @@ function Model({ registerSeats, onSeatClick }) {
       object={scene}
       onPointerDown={(e) => {
         e.stopPropagation();
-
         if (e.object.name.toLowerCase().includes("chair")) {
           onSeatClick(e.object.name);
         }
@@ -62,6 +55,7 @@ function FPSControls({ enabled }) {
   const yaw = useRef(0);
   const pitch = useRef(0);
 
+  /* KEYBOARD */
   useEffect(() => {
     const down = (e) => (keys.current[e.key.toLowerCase()] = true);
     const up = (e) => (keys.current[e.key.toLowerCase()] = false);
@@ -75,6 +69,19 @@ function FPSControls({ enabled }) {
     };
   }, []);
 
+  /* POINTER LOCK */
+  useEffect(() => {
+    const click = () => {
+      if (enabled) {
+        document.body.requestPointerLock();
+      }
+    };
+
+    window.addEventListener("click", click);
+    return () => window.removeEventListener("click", click);
+  }, [enabled]);
+
+  /* MOUSE LOOK */
   useEffect(() => {
     const move = (e) => {
       if (!enabled) return;
@@ -89,6 +96,7 @@ function FPSControls({ enabled }) {
     return () => document.removeEventListener("mousemove", move);
   }, [enabled]);
 
+  /* MOVEMENT */
   useFrame(() => {
     if (!enabled) return;
 
@@ -117,46 +125,91 @@ function FPSControls({ enabled }) {
   return null;
 }
 
-/* ================= CAMERA LOCK ================= */
-function CameraSeat({ seatObj }) {
+/* ================= CAMERA SYSTEM ================= */
+function CameraSystem({ seatObj, thirdPerson }) {
   const { camera } = useThree();
 
+  const yaw = useRef(0);
+  const pitch = useRef(0);
+
   useEffect(() => {
+    const move = (e) => {
+      if (!seatObj) return;
+
+      yaw.current -= e.movementX * 0.002;
+      pitch.current -= e.movementY * 0.002;
+
+      pitch.current = Math.max(-0.5, Math.min(0.5, pitch.current));
+    };
+
+    document.addEventListener("mousemove", move);
+    return () => document.removeEventListener("mousemove", move);
+  }, [seatObj]);
+
+  useFrame(() => {
     if (!seatObj) return;
 
-    const anchor = getSeatAnchor(seatObj);
+    const pos = new THREE.Vector3();
+    seatObj.getWorldPosition(pos);
 
-    camera.position.set(anchor.position[0], anchor.position[1] + 1.1, anchor.position[2]);
-  }, [seatObj]);
+    const dir = new THREE.Vector3(
+      Math.sin(yaw.current),
+      0,
+      Math.cos(yaw.current)
+    );
+
+    let camPos;
+
+    if (thirdPerson) {
+      camPos = pos.clone()
+        .add(new THREE.Vector3(0, 1.6, 0))
+        .add(dir.clone().multiplyScalar(-2.5));
+    } else {
+      camPos = pos.clone()
+        .add(new THREE.Vector3(0, 1.2, 0))
+        .add(dir.clone().multiplyScalar(0.3));
+    }
+
+    camera.position.lerp(camPos, 0.15);
+
+    const lookTarget = pos.clone().add(new THREE.Vector3(0, 1.2, 0)).add(dir);
+    camera.lookAt(lookTarget);
+  });
 
   return null;
 }
 
-/* ================= 🔥 ANCHOR FUNCTION ================= */
+/* ================= SEAT SNAP ================= */
 function getSeatAnchor(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
+  const raycaster = new THREE.Raycaster();
 
   const center = new THREE.Vector3();
-  box.getCenter(center);
+  obj.getWorldPosition(center);
 
-  const size = new THREE.Vector3();
-  box.getSize(size);
+  const origin = center.clone().add(new THREE.Vector3(0, 2, 0));
+  raycaster.set(origin, new THREE.Vector3(0, -1, 0));
 
-  const quat = new THREE.Quaternion();
-  obj.getWorldQuaternion(quat);
+  const intersects = raycaster.intersectObject(obj, true);
 
-  const rot = new THREE.Euler().setFromQuaternion(quat);
+  let y = center.y;
+
+  if (intersects.length > 0) {
+    let best = intersects[0];
+    for (let i = 1; i < intersects.length; i++) {
+      if (intersects[i].point.y > best.point.y) best = intersects[i];
+    }
+    y = best.point.y + 0.03;
+  }
+
+  const quat = obj.getWorldQuaternion(new THREE.Quaternion());
+  const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(quat);
+  const offset = forward.multiplyScalar(-0.25);
+
+  const rotY = new THREE.Euler().setFromQuaternion(quat).y;
 
   return {
-    // 🎯 PERFECT SEAT POSITION
-    position: [
-      center.x,
-      box.max.y - size.y * 0.35, // seat height area
-      center.z
-    ],
-
-    // 🎯 FACE CORRECT DIRECTION
-    rotation: [0, rot.y + Math.PI, 0]
+    position: [center.x + offset.x, y, center.z + offset.z],
+    rotation: [0, rotY, 0],
   };
 }
 
@@ -167,6 +220,7 @@ export default function Room3D() {
   const [seatMap, setSeatMap] = useState({});
   const [seatObjects, setSeatObjects] = useState({});
   const [mySeat, setMySeat] = useState(null);
+  const [thirdPerson, setThirdPerson] = useState(true);
 
   const userId = localStorage.getItem("userId");
 
@@ -182,9 +236,23 @@ export default function Room3D() {
     };
   }, []);
 
+  useEffect(() => {
+    const found = Object.entries(seatMap).find(([_, uid]) => uid === userId);
+    if (found) setMySeat(found[0]);
+  }, [seatMap]);
+
+  useEffect(() => {
+    const toggle = (e) => {
+      if (e.key.toLowerCase() === "v") {
+        setThirdPerson((p) => !p);
+      }
+    };
+    window.addEventListener("keydown", toggle);
+    return () => window.removeEventListener("keydown", toggle);
+  }, []);
+
   const handleSeatClick = (seatName) => {
     if (seatMap[seatName]) return;
-
     socket.emit("takeSeat", { roomId, seatName, userId });
     setMySeat(seatName);
   };
@@ -197,8 +265,16 @@ export default function Room3D() {
       <Suspense fallback={<Loader />}>
         <Model registerSeats={setSeatObjects} onSeatClick={handleSeatClick} />
 
+        {/* WALK MODE */}
         <FPSControls enabled={!mySeat} />
-        <CameraSeat seatObj={seatObjects[mySeat]} />
+
+        {/* SIT MODE CAMERA */}
+        {mySeat && (
+          <CameraSystem
+            seatObj={seatObjects[mySeat]}
+            thirdPerson={thirdPerson}
+          />
+        )}
 
         {/* AVATARS */}
         {Object.entries(seatMap).map(([seatName, uid]) => {
@@ -207,9 +283,11 @@ export default function Room3D() {
 
           const anchor = getSeatAnchor(obj);
 
+          if (uid === userId && !mySeat) return null;
+
           return (
             <Avatar
-              key={uid}
+              key={seatName + "-" + uid}
               position={anchor.position}
               rotation={anchor.rotation}
               avatarType="female"

@@ -24,7 +24,7 @@ app.use(cookieParser());
 // CORS (IMPORTANT: keep above routes ideally)
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "https://rv5p3h4n-5173.inc1.devtunnels.ms/",
     credentials: true,
   })
 );

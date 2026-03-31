@@ -7,73 +7,54 @@ export default function Avatar({
   position,
   rotation,
   avatarType,
-  headRotation,
-  isMe,
 }) {
   const group = useRef();
 
+  /* ================= LOAD MODEL ================= */
   const { scene, animations } = useGLTF(
     avatarType === "female"
       ? "/models/female.glb"
       : "/models/male.glb"
   );
 
+  /* ================= ANIMATION ================= */
   const { actions } = useAnimations(animations, group);
 
-  /* 🔥 DEBUG ANIMATION */
-  useEffect(() => {
-    console.log("Animations:", animations);
-  }, [animations]);
-
-  /* ================= PLAY ANIMATION ================= */
   useEffect(() => {
     if (!actions) return;
 
-    const keys = Object.keys(actions);
+    const names = Object.keys(actions);
 
-    if (keys.length === 0) {
-      console.log("❌ NO ANIMATION FOUND");
+    console.log("Available animations:", names);
+
+    if (names.length === 0) {
+      console.warn("❌ No animations found in GLB");
       return;
     }
 
-    const anim = actions[keys[0]];
+    /* ================= PLAY FIRST ANIMATION ================= */
+    const action = actions[names[0]];
+    action.reset().fadeIn(0.3).play();
 
-    if (anim) {
-      anim.reset().fadeIn(0.3).play();
-      console.log("✅ Playing animation:", keys[0]);
-    }
+    return () => action.fadeOut(0.3);
   }, [actions]);
 
-  /* ================= HIDE HEAD ================= */
+  /* ================= SCALE FIX ================= */
   useEffect(() => {
-    if (!scene) return;
-
     scene.traverse((child) => {
-      if (child.isMesh && isMe) {
-        if (
-          child.name.toLowerCase().includes("head") ||
-          child.name.toLowerCase().includes("neck")
-        ) {
-          child.visible = false;
-        }
+      if (child.isMesh) {
+        child.castShadow = true;
       }
     });
-  }, [scene, isMe]);
-
-  /* ================= HEAD ROTATION ================= */
-  useEffect(() => {
-    if (!group.current || !headRotation) return;
-
-    group.current.traverse((child) => {
-      if (child.name.toLowerCase().includes("head")) {
-        child.rotation.x = headRotation.x;
-        child.rotation.y = headRotation.y;
-      }
-    });
-  }, [headRotation]);
+  }, [scene]);
 
   return (
-    <group ref={group} position={position} rotation={rotation} scale={0.9}>
+    <group
+      ref={group}
+      position={position}
+      rotation={rotation}
+      scale={0.9}
+    >
       <primitive object={scene} />
     </group>
   );

@@ -22,6 +22,7 @@ import PreJoin from "./components/formal/PreJoin";
 import MeetingRoom from "./components/formal/MeetingRoom";
 import Rooms from "./pages/Rooms";
 import CreateRoom from "./pages/CreateRoom";
+import AvatarSelect from "./pages/AvatarSelect";
 import Room3D from "./pages/Room3D";
 
 function NotFound() {
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/formal/room/:id" element={<MeetingRoom />} />
         <Route path="/rooms" element={<Rooms />} />
         <Route path="/create-room" element={<CreateRoom />} />
+        <Route path="/avatar" element={<AvatarSelect />} />
         <Route path="/room/:roomId" element={<Room3D />} />
 
 

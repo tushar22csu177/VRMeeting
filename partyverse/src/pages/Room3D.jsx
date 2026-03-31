@@ -1,53 +1,70 @@
-import React, { useEffect, useState, Suspense, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import {
-  OrbitControls,
-  PointerLockControls,
-  useGLTF,
-  useProgress,
-  Html,
-} from "@react-three/drei";
-import * as THREE from "three";
-import socket from "../lib/socket";
+// src/pages/Room3D.jsx
 
-/* LOADER */
+import React, { useState, useEffect, useRef, Suspense } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Html, useProgress, useGLTF } from "@react-three/drei";
+import socket from "../lib/socket";
+import Avatar from "../components/Avatar";
+import { useParams } from "react-router-dom";
+import * as THREE from "three";
+
+/* ================= LOADER ================= */
 function Loader() {
   const { progress } = useProgress();
-  return <Html center>{progress.toFixed(0)}%</Html>;
+  return (
+    <Html fullscreen>
+      <div style={{ color: "white" }}>
+        Loading {progress.toFixed(0)}%
+      </div>
+    </Html>
+  );
 }
 
-/* HEAD TRACKER */
-function HeadTracker({ roomId }) {
-  const { camera } = useThree();
-  const last = useRef(0);
-
-  useFrame(() => {
-    const now = Date.now();
-    if (now - last.current > 100) {
-      last.current = now;
-
-      socket.emit("headMove", {
-        roomId,
-        rotation: [
-          camera.rotation.x,
-          camera.rotation.y,
-          camera.rotation.z,
-        ],
-      });
-    }
-  });
-
-  return null;
-}
-
-/* SPECTATOR CONTROLS */
-function SpectatorControls() {
-  const { camera } = useThree();
-  const keys = useRef({});
+/* ================= MODEL ================= */
+function Model({ registerSeats, onSeatClick }) {
+  const { scene } = useGLTF("/models/Jazz_Club.glb");
 
   useEffect(() => {
-    const down = (e) => (keys.current[e.code] = true);
-    const up = (e) => (keys.current[e.code] = false);
+    const seats = {};
+
+    scene.traverse((child) => {
+      if (
+        child.isMesh &&
+        (child.name.toLowerCase().includes("chair") ||
+          child.name.toLowerCase().includes("seat"))
+      ) {
+        seats[child.name] = child;
+      }
+    });
+
+    registerSeats(seats);
+  }, [scene]);
+
+  return (
+    <primitive
+      object={scene}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+
+        if (e.object.name.toLowerCase().includes("chair")) {
+          onSeatClick(e.object.name);
+        }
+      }}
+    />
+  );
+}
+
+/* ================= FPS CONTROLS ================= */
+function FPSControls({ enabled }) {
+  const { camera } = useThree();
+
+  const keys = useRef({});
+  const yaw = useRef(0);
+  const pitch = useRef(0);
+
+  useEffect(() => {
+    const down = (e) => (keys.current[e.key.toLowerCase()] = true);
+    const up = (e) => (keys.current[e.key.toLowerCase()] = false);
 
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -58,108 +75,106 @@ function SpectatorControls() {
     };
   }, []);
 
+  useEffect(() => {
+    const move = (e) => {
+      if (!enabled) return;
+
+      yaw.current -= e.movementX * 0.002;
+      pitch.current -= e.movementY * 0.002;
+
+      pitch.current = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch.current));
+    };
+
+    document.addEventListener("mousemove", move);
+    return () => document.removeEventListener("mousemove", move);
+  }, [enabled]);
+
   useFrame(() => {
-    const speed = 0.12;
+    if (!enabled) return;
 
-    const forward = new THREE.Vector3();
-    camera.getWorldDirection(forward);
-    forward.y = 0;
-    forward.normalize();
+    const speed = 0.08;
 
-    const right = new THREE.Vector3();
-    right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+    const forward = new THREE.Vector3(
+      Math.sin(yaw.current),
+      0,
+      Math.cos(yaw.current)
+    );
 
-    if (keys.current["KeyW"]) camera.position.addScaledVector(forward, speed);
-    if (keys.current["KeyS"]) camera.position.addScaledVector(forward, -speed);
-    if (keys.current["KeyA"]) camera.position.addScaledVector(right, -speed);
-    if (keys.current["KeyD"]) camera.position.addScaledVector(right, speed);
+    const right = new THREE.Vector3(
+      Math.sin(yaw.current - Math.PI / 2),
+      0,
+      Math.cos(yaw.current - Math.PI / 2)
+    );
+
+    if (keys.current["w"]) camera.position.addScaledVector(forward, -speed);
+    if (keys.current["s"]) camera.position.addScaledVector(forward, speed);
+    if (keys.current["a"]) camera.position.addScaledVector(right, -speed);
+    if (keys.current["d"]) camera.position.addScaledVector(right, speed);
+
+    camera.rotation.set(pitch.current, yaw.current, 0);
   });
 
   return null;
 }
 
-/* SEAT */
-function createSeatAnchor(object) {
-  const box = new THREE.Box3().setFromObject(object);
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-  center.y += 1.2;
-
-  return {
-    seatId: object.name,
-    position: [center.x, center.y, center.z],
-  };
-}
-
-/* AVATAR */
-function Avatar({ position, name, rotation }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh>
-        <sphereGeometry args={[0.3]} />
-        <meshStandardMaterial color="orange" />
-      </mesh>
-
-      <Html distanceFactor={10}>
-        <div style={{ color: "white" }}>{name}</div>
-      </Html>
-    </group>
-  );
-}
-
-/* MODEL */
-function Model({ onSeatClick }) {
-  const { scene } = useGLTF("/models/Jazz_Club.glb");
-
-  return (
-    <primitive
-      object={scene}
-      scale={0.9}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        const name = e.object.name.toLowerCase();
-
-        if (name.includes("chair") || name.includes("stool")) {
-          onSeatClick(e.object);
-        }
-      }}
-    />
-  );
-}
-
-/* CAMERA SNAP */
-function CameraController({ anchor }) {
+/* ================= CAMERA LOCK ================= */
+function CameraSeat({ seatObj }) {
   const { camera } = useThree();
 
   useEffect(() => {
-    if (!anchor) return;
-    camera.position.set(...anchor.position);
-  }, [anchor]);
+    if (!seatObj) return;
+
+    const anchor = getSeatAnchor(seatObj);
+
+    camera.position.set(anchor.position[0], anchor.position[1] + 1.1, anchor.position[2]);
+  }, [seatObj]);
 
   return null;
 }
 
-/* MAIN */
-export default function Room3D() {
-  const roomId = "room1";
+/* ================= 🔥 ANCHOR FUNCTION ================= */
+function getSeatAnchor(obj) {
+  const box = new THREE.Box3().setFromObject(obj);
 
-  const user = {
-    id: socket.id,
-    name: "User" + Math.floor(Math.random() * 1000),
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+
+  const size = new THREE.Vector3();
+  box.getSize(size);
+
+  const quat = new THREE.Quaternion();
+  obj.getWorldQuaternion(quat);
+
+  const rot = new THREE.Euler().setFromQuaternion(quat);
+
+  return {
+    // 🎯 PERFECT SEAT POSITION
+    position: [
+      center.x,
+      box.max.y - size.y * 0.35, // seat height area
+      center.z
+    ],
+
+    // 🎯 FACE CORRECT DIRECTION
+    rotation: [0, rot.y + Math.PI, 0]
   };
+}
 
-  const [anchor, setAnchor] = useState(null);
-  const [seats, setSeats] = useState({});
+/* ================= MAIN ================= */
+export default function Room3D() {
+  const { roomId } = useParams();
+
+  const [seatMap, setSeatMap] = useState({});
+  const [seatObjects, setSeatObjects] = useState({});
+  const [mySeat, setMySeat] = useState(null);
+
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    socket.emit("joinRoom", {
-      roomId,
-      userId: socket.id,
-      name: user.name,
-    });
+    socket.emit("joinRoom", { roomId, userId });
 
-    socket.on("seatState", setSeats);
-    socket.on("seatUpdate", setSeats);
+    socket.on("seatState", setSeatMap);
+    socket.on("seatUpdate", setSeatMap);
 
     return () => {
       socket.off("seatState");
@@ -167,75 +182,42 @@ export default function Room3D() {
     };
   }, []);
 
-  const handleSeatClick = (obj) => {
-    const seat = createSeatAnchor(obj);
+  const handleSeatClick = (seatName) => {
+    if (seatMap[seatName]) return;
 
-    if (seats[seat.seatId]) {
-      alert("Seat taken");
-      return;
-    }
-
-    socket.emit("takeSeat", {
-      roomId,
-      seatName: seat.seatId,
-      userId: socket.id,
-      name: user.name,
-      position: seat.position,
-    });
-
-    setAnchor(seat);
-  };
-
-  const leaveSeat = () => {
-    if (!anchor) return;
-
-    socket.emit("leaveSeat", {
-      roomId,
-      seatName: anchor.seatId,
-    });
-
-    setAnchor(null);
+    socket.emit("takeSeat", { roomId, seatName, userId });
+    setMySeat(seatName);
   };
 
   return (
-    <div style={{ height: "100vh" }}>
-      <Canvas camera={{ position: [0, 5, 15] }}>
-        <ambientLight intensity={1} />
+    <Canvas camera={{ position: [0, 2, 5] }}>
+      <ambientLight />
+      <directionalLight position={[5, 5, 5]} />
 
-        <Suspense fallback={<Loader />}>
-          <Model onSeatClick={handleSeatClick} />
-        </Suspense>
+      <Suspense fallback={<Loader />}>
+        <Model registerSeats={setSeatObjects} onSeatClick={handleSeatClick} />
 
-        <CameraController anchor={anchor} />
+        <FPSControls enabled={!mySeat} />
+        <CameraSeat seatObj={seatObjects[mySeat]} />
 
-        {!anchor && (
-          <>
-            <OrbitControls />
-            <SpectatorControls />
-          </>
-        )}
+        {/* AVATARS */}
+        {Object.entries(seatMap).map(([seatName, uid]) => {
+          const obj = seatObjects[seatName];
+          if (!obj) return null;
 
-        {anchor && <PointerLockControls />}
+          const anchor = getSeatAnchor(obj);
 
-        <HeadTracker roomId={roomId} />
-
-        {Object.entries(seats).map(([id, data]) => (
-          <Avatar
-            key={id}
-            position={data.position}
-            name={data.name}
-            rotation={data.rotation}
-          />
-        ))}
-      </Canvas>
-
-      {anchor && (
-        <button onClick={leaveSeat} style={{ position: "absolute", top: 20 }}>
-          Leave Seat
-        </button>
-      )}
-    </div>
+          return (
+            <Avatar
+              key={uid}
+              position={anchor.position}
+              rotation={anchor.rotation}
+              avatarType="female"
+              isMe={uid === userId}
+            />
+          );
+        })}
+      </Suspense>
+    </Canvas>
   );
 }
-
-useGLTF.preload("/models/Jazz_Club.glb");

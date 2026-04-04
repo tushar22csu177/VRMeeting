@@ -12,8 +12,7 @@ export default function Landing() {
 
         <div className="landing-navbar-links">
           <a href="/partyverse" className="active-link">Home</a>
-          <a href="/events">Events</a>
-          <a href="/venues">Venues</a>
+          
 
           {/* 🔥 ADD THIS ONLY */}
           <a href="/rooms">Rooms</a>
@@ -49,11 +48,9 @@ export default function Landing() {
 
         {/* CTA */}
         <div className="landing-cta">
-          <a href="/events">🕶️ Enter Event</a>
+          
 
-          <a href="/events/new" className="host-link">
-            ✨ Host an Event
-          </a>
+          
 
           {/* 🔥 ADD THESE 2 BUTTONS */}
           <a href="/rooms" className="host-link">

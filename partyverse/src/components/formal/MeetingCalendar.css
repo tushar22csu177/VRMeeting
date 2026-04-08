@@ -1,0 +1,51 @@
+.calendar-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.calendar-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.quick-meet-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.quick-meet-btn:hover {
+  transform: scale(1.05);
+}
+
+.rbc-calendar {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.rbc-toolbar {
+  margin-bottom: 15px;
+}
+
+.rbc-event {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.rbc-today {
+  background: rgba(99,102,241,0.1);
+}
